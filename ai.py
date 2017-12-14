@@ -25,11 +25,32 @@ class Network(nn.Module):
         #Connection with hidden layer and output layer
         self.fc2 = nn.Linear(30, nb_action)
     
-    #Q-values of each action
+    #Return Q-values of each action
     def forward(self, state):
         
         x = f.relu(self.fc1(state))
         q_values = self.fc2(x)
         
         return q_values
+
+#Experience Replay
+class ReplayMemory(object):
+    
+    def __init__(self, capacity):
+        
+        self.capacity = capacity
+        self.memory = []
+    
+    def push(self, event):
+        
+        self.memory.append(event)
+        
+        if len(self.memory) > self.capacity:
+            del self.memory[0] 
+    
+    def sample(self, batch_size):
+        
+        samples = zip(*random.sample(self.memory, batch_size) )
+        return map(lambda x: Variable(torch.cat(x, 0)), samples)
+        
         
