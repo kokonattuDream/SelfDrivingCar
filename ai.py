@@ -72,7 +72,7 @@ class Dqn():
     
     def select_action(self, state):
         #soft max function that selects the q-target
-        probs = F.softmax(self.model(Variable(state, volatile = True))*100) # T=100
+        probs = F.softmax(self.model(Variable(state, volatile = True))*600) # T=100
         action = probs.multinomial()
         
         return action.data[0,0]
