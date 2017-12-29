@@ -51,6 +51,10 @@ last_distance = 0
 # Car
 
 class Car(Widget):
+    """
+    Car Object
+    
+    """
     
     angle = NumericProperty(0)
     rotation = NumericProperty(0)
@@ -59,23 +63,30 @@ class Car(Widget):
     velocity_y = NumericProperty(0)
     velocity = ReferenceListProperty(velocity_x, velocity_y)
     
+    #Car Sensors (Front)
     sensor1_x = NumericProperty(0)
     sensor1_y = NumericProperty(0)
     sensor1 = ReferenceListProperty(sensor1_x, sensor1_y)
-    
+    #Right
     sensor2_x = NumericProperty(0)
     sensor2_y = NumericProperty(0)
     sensor2 = ReferenceListProperty(sensor2_x, sensor2_y)
-    
+    #Left
     sensor3_x = NumericProperty(0)
     sensor3_y = NumericProperty(0)
     sensor3 = ReferenceListProperty(sensor3_x, sensor3_y)
     
+    #Signal recieved by car sensors
     signal1 = NumericProperty(0)
     signal2 = NumericProperty(0)
     signal3 = NumericProperty(0)
 
     def move(self, rotation):
+        """
+        Movement of the car depends on the rotation
+        
+        @param rotation: Current rotation of the car
+        """
         self.pos = Vector(*self.velocity) + self.pos
         self.rotation = rotation
         self.angle = self.angle + self.rotation
@@ -96,15 +107,26 @@ class Car(Widget):
             self.signal3 = 1.
 
 class Ball1(Widget):
+    """
+    Front Car Sensor
+    """
     pass
 class Ball2(Widget):
+    """
+    Right Car Sensor
+    """
     pass
 class Ball3(Widget):
+    """
+    Left Car Sensor
+    """
     pass
 
-# Game
-
 class Game(Widget):
+    """
+    Self Drivering Car Game
+    
+    """
 
     car = ObjectProperty(None)
     ball1 = ObjectProperty(None)
@@ -112,10 +134,19 @@ class Game(Widget):
     ball3 = ObjectProperty(None)
 
     def serve_car(self):
+        """
+        Launch the car when start app
+        
+        """
+        
         self.car.center = self.center
         self.car.velocity = Vector(6, 0)
 
     def update(self, dt):
+        """
+        Update everything we need to update
+        
+        """
 
         global brain
         global last_reward
@@ -126,16 +157,20 @@ class Game(Widget):
         global longueur
         global largeur
 
+        #Width and Height of map
         longueur = self.width
         largeur = self.height
+        
         if first_update:
             init()
 
+        #Distance between goal and current location in x-cord and y-coord
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
         
         orientation = Vector(*self.car.velocity).angle((xx,yy))/180.
         
+        #Signal received from car
         last_signal = [self.car.signal1, self.car.signal2, self.car.signal3, orientation, -orientation]
         action = brain.update(last_reward, last_signal)
         scores.append(brain.score())
@@ -144,21 +179,28 @@ class Game(Widget):
         
         self.car.move(rotation)
         
+        #Distance between current location and goal
         distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
         
+        #Update positon of car sensors
         self.ball1.pos = self.car.sensor1
         self.ball2.pos = self.car.sensor2
         self.ball3.pos = self.car.sensor3
 
+        #Car touch sand -> negative reward -1
         if sand[int(self.car.x),int(self.car.y)] > 0:
             self.car.velocity = Vector(1, 0).rotate(self.car.angle)
             last_reward = -1
-        else: # otherwise
+            
+        else: 
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
+            #Get negative reward -0.2
             last_reward = -0.2
+            #If get closer to goal, reward +1
             if distance < last_distance:
                 last_reward = 0.1
-
+                
+        #Car cannot get close to edges, negative reward -1
         if self.car.x < 10:
             self.car.x = 10
             last_reward = -1
@@ -172,16 +214,26 @@ class Game(Widget):
             self.car.y = self.height - 10
             last_reward = -1
 
+        #Car reaches goal, then change goal to new postion
+        #Change between bottom right corner and top left corner
         if distance < 100:
-            goal_x = self.width-goal_x
+            goal_x = self.width-goal_x 
             goal_y = self.height-goal_y
+        
         last_distance = distance
 
-# Painting Tools (sand)
 
 class MyPaintWidget(Widget):
+    """
+    Painting Tools for sand
+    """
 
     def on_touch_down(self, touch):
+        """
+        Add sand when left click
+        
+        @param touch: left click xy-coordinate
+        """
         global length, n_points, last_x, last_y
         
         with self.canvas:
@@ -196,6 +248,11 @@ class MyPaintWidget(Widget):
             sand[int(touch.x),int(touch.y)] = 1
 
     def on_touch_move(self, touch):
+        """
+        Put some sand when we move the mouse while pressing left
+        
+        @param touch: left click xy-coordinate
+        """
         global length, n_points, last_x, last_y
         
         if touch.button == 'left':
@@ -211,11 +268,19 @@ class MyPaintWidget(Widget):
             last_x = x
             last_y = y
 
-# API buttons (Clear, Save, Load)
+
 
 class CarApp(App):
+    """
+    Whole Application 
+    
+    """
 
     def build(self):
+        """
+        Build the application
+        
+        """
         parent = Game()
         parent.serve_car()
         
@@ -238,17 +303,29 @@ class CarApp(App):
         return parent
 
     def clear_canvas(self, obj):
+        """
+        Clear Button
+        """
+        
         global sand
         self.painter.canvas.clear()
         sand = np.zeros((longueur,largeur))
 
     def save(self, obj):
+        """
+        Save Button: Save brain
+        
+        """
         print("saving brain...")
         brain.save()
         plt.plot(scores)
         plt.show()
 
     def load(self, obj):
+        """
+        Load Button: Load brain
+        
+        """
         print("loading last saved brain...")
         brain.load()
 
